@@ -1,5 +1,5 @@
 C=gcc
-C_FLAGS=-c -Wall -pedantic -mmacosx-version-min=10.6
+C_FLAGS=-c -pedantic -mmacosx-version-min=10.6
 
 L=clang
 L_FLAGS=-lSystem -mmacosx-version-min=10.6
@@ -27,7 +27,12 @@ linkTest: buildTest
 test: linkTest
 	./$(TEST_EXE)
 
+retest: clean test
 
 clean:
 	rm -f $(OBJS)
 	rm -f $(TEST_OBJS)
+
+cleanResults:
+	rm *.log
+	rm results-*

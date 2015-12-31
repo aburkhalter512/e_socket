@@ -1,65 +1,116 @@
-#include "intercept.h"
-#include "coverage.h"
-#include "e_socket.h"
+#include "test_main.h"
 
-#include <stdio.h> // printf
-#include <unistd.h> // close
-
-const char* E_RESULT_to_str(E_RESULT result)
+// Tests ===========================================================
+TEST_FUNC(bad_server_args)
 {
-    switch (result)
+    LANDMARK(__FILE__, __LINE__)
+
+    bool success = true;
+
+    // NULL Arg test
+    E_RESULT e_result = start_e_server(NULL);
+    if (e_result != E_BAD_ARG)
     {
-        case E_SOC_ERR:
-            return "E_SOC_ERR";
-        case E_BAD_ARG:
-            return "E_BAD_ARG";
-        case E_SYS_ERR:
-            return "E_SYS_ERR";
-        case E_SUCCESS:
-            return "E_SUCCESS";
-        default:
-            return "";
+        TEST_RESULTS(
+            FAIL,
+            "Bad E_RESULT: Expected: %s, Actual: %s",
+                E_RESULT_to_str(E_BAD_ARG),
+                E_RESULT_to_str(e_result))
+
+        success = false;
     }
-}
 
-void landmark_on_new_connection(struct e_handler_arg* arg)
-{
+    // Both required function pointers are NULL
+    struct e_server bad_server;
+    bad_server.e_listen_port = SERVER_PORT; // Not testing bad ports
+    bad_server.on_close = NULL;
+    bad_server.on_new_connection = NULL;
+    e_result = start_e_server(&bad_server);
+    if (e_result != E_BAD_ARG)
+    {
+        TEST_RESULTS(
+            FAIL,
+            "Bad E_RESULT: Expected: %s, Actual: %s",
+                E_RESULT_to_str(E_BAD_ARG),
+                E_RESULT_to_str(e_result))
+
+        success = false;
+    }
+
+
+    // Only on_new_connection func pointer is NULL
+    bad_server.on_close = landmark_on_close;
+    e_result = start_e_server(&bad_server);
+    if (e_result != E_BAD_ARG)
+    {
+        TEST_RESULTS(
+            FAIL,
+            "Bad E_RESULT: Expected: %s, Actual: %s",
+                E_RESULT_to_str(E_BAD_ARG),
+                E_RESULT_to_str(e_result))
+
+        success = false;
+    }
+
+
+    // Only on_close func pointer is NULL
+    bad_server.on_close = NULL;
+    bad_server.on_new_connection = landmark_on_new_connection;
+    e_result = start_e_server(&bad_server);
+    if (e_result != E_BAD_ARG)
+    {
+        TEST_RESULTS(
+            FAIL,
+            "Bad E_RESULT: Expected: %s, Actual: %s",
+                E_RESULT_to_str(E_BAD_ARG),
+                E_RESULT_to_str(e_result))
+
+        success = false;
+    }
+
+
+    // All good arguments
+    bad_server.on_close = landmark_on_close;
+    bad_server.on_new_connection = landmark_on_new_connection;
+    e_result = start_e_server(&bad_server);
+    if (e_result != E_SUCCESS)
+    {
+        TEST_RESULTS(
+            FAIL,
+            "Bad E_RESULT: Expected: %s, Actual: %s",
+                E_RESULT_to_str(E_SUCCESS),
+                E_RESULT_to_str(e_result))
+
+        success = false;
+    }
+
+
+    if (success)
+    {
+        TEST_RESULTS(
+            PASS,
+            "%s",
+            "Server Arguments Verified.")
+    }
+
     LANDMARK(__FILE__, __LINE__)
 }
-void landmark_on_close(struct e_handler_arg* arg)
-{
-    LANDMARK(__FILE__, __LINE__)
-}
 
+// Main =========================================================
 int main(int argc, const char* argv[])
 {
-    cov_filename("test_cov.txt");
-    cov_start();
+    char results_filename[RESULTS_FILENAME_LEN];
 
-    LANDMARK(__FILE__, __LINE__)
+    time_t cur_time;
+    time(&cur_time);
+    char* start_time = ctime(&cur_time);
+    sprintf(results_filename, "results-%s", start_time);
 
-    struct e_server server;
-    server.e_listen_port = 3000;
-    server.e_command = WORK;
-    server.on_new_connection = landmark_on_new_connection;
-    server.on_close = landmark_on_close;
+    FILE* results_file = fopen(results_filename, "w");
 
-    E_RESULT result = start_e_server(&server);
-    printf("%s\n", E_RESULT_to_str(result));
+    bad_server_args(results_file);
 
-    close(server.e_listen_fd);
-
-    void* exit_val;
-    int join_res = pthread_join(server.e_thread, &exit_val);
-    if (join_res == -1)
-        perror("Wait failed.\n");
-    else
-        printf("Server thread was closed.\n");
-
-
-    LANDMARK(__FILE__, __LINE__)
-
-    cov_stop();
+    fclose(results_file);
 
     return 0;
 }
