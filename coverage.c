@@ -46,19 +46,20 @@ void cov_start()
 
     cov_file = fopen(_cov_filename, "a");
 
-    const int TIME_LEN = 26;
     time_t cur_time;
     time(&cur_time);
     char* start_time = ctime(&cur_time);
 
-    fwrite(start_time, sizeof(char), TIME_LEN, cov_file);
+    fprintf(cov_file, "START: %s", start_time);
+    cov_counter = 0;
 }
-void cov_hit(const char str[], int str_len)
+void cov_hit(const char str[])
 {
     if (!cov_file)
         return;
 
-    fwrite(str, sizeof(char), str_len, cov_file);
+    fprintf(cov_file, "%d: %s", cov_counter, str);
+    cov_counter++;
 }
 void cov_stop()
 {

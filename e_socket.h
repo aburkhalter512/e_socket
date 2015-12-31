@@ -2,6 +2,7 @@
 #define E_SOCKET
 
 #include <netinet/in.h> // struct sockaddr_in
+#include <pthread.h>
 
 struct e_server;
 struct e_node;
@@ -46,6 +47,7 @@ struct e_server
 {
     int e_listen_fd;
     unsigned short e_listen_port;
+    pthread_t e_thread;
 
     enum E_SERVER_CMD e_command;
 
