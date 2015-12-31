@@ -1,6 +1,11 @@
-#include "e_socket.h"
+#ifdef TEST
 #include "intercept_defs.h"
 #include "coverage.h"
+#else
+#define LANDMARK()
+#endif
+
+#include "e_socket.h"
 
 #include <stdio.h> // perror
 #include <string.h> // memset
@@ -50,18 +55,18 @@ static void e_handle_connections(struct pollfd*, struct e_node*, int*);
 // necessary events for a specific connection.
 E_RESULT start_e_server(struct e_server* server)
 {
-    LANDMARK();
+    LANDMARK()
 
     if (!server || !server->on_new_connection || !server->on_close)
     {
-        LANDMARK();
+        LANDMARK()
         return E_BAD_ARG;
     }
 
     server->e_listen_fd = socket(PF_INET, SOCK_STREAM, TCP_PROTOCOL);
     if (server->e_listen_fd == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         perror("Socket could not be created.");
         return E_SOC_ERR;
     }
@@ -75,7 +80,7 @@ E_RESULT start_e_server(struct e_server* server)
 
     if (bind(server->e_listen_fd, (struct sockaddr*) &listen_addr, sizeof(struct sockaddr_in)) == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         close(server->e_listen_fd);
 
         perror("Socket could not be bound.");
@@ -84,7 +89,7 @@ E_RESULT start_e_server(struct e_server* server)
 
     if (listen(server->e_listen_fd, QUEUE_LIMIT) == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         close(server->e_listen_fd);
 
         perror("Listening on socket failed.");
@@ -96,7 +101,7 @@ E_RESULT start_e_server(struct e_server* server)
 
     if (pthread_create(&e_server_thread, DEFAULT_ATTR, e_server_main, (void*) server) != SYS_SUC)
     {
-        LANDMARK();
+        LANDMARK()
         close(server->e_listen_fd);
 
         perror("Creating server thread failed.");
@@ -108,11 +113,11 @@ E_RESULT start_e_server(struct e_server* server)
 
 E_RESULT e_connect(const char host[], const char service[], struct e_node* connection)
 {
-    LANDMARK();
+    LANDMARK()
 
     if (host == NULL || service == NULL || connection == NULL)
     {
-        LANDMARK();
+        LANDMARK()
         return E_BAD_ARG;
     }
 
@@ -124,14 +129,14 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
 
     if (getaddrinfo(host, service, &hints,  &res) != 0)
     {
-        LANDMARK();
+        LANDMARK()
         return E_SOC_ERR;
     }
 
     connection->socket = socket(PF_INET, SOCK_STREAM, TCP_PROTOCOL);
     if (connection->socket == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         perror("Socket could not be created.");
 
         return E_SOC_ERR;
@@ -139,7 +144,7 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
 
     if (connect(connection->socket, res->ai_addr, res->ai_addrlen) == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         close(connection->socket);
 
         return E_SOC_ERR;
@@ -156,11 +161,11 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
     static bool e_first_client = true;
     if (e_first_client)
     {
-        LANDMARK();
+        LANDMARK()
         pthread_mutexattr_t* DEFAULT_MUTEX_ATTR = NULL;
         if (pthread_mutex_init(&e_client_mutex, DEFAULT_MUTEX_ATTR) != SYS_SUC)
         {
-            LANDMARK();
+            LANDMARK()
             close(connection->socket);
 
             return E_SYS_ERR;
@@ -170,7 +175,7 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
         e_client_cons = calloc(sizeof(struct e_node), e_client_cons_cap);
         if (e_client_cons == NULL)
         {
-            LANDMARK();
+            LANDMARK()
             pthread_mutex_destroy(&e_client_mutex);
 
             close(connection->socket);
@@ -183,7 +188,7 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
         pthread_attr_t* DEFAULT_ATTR = NULL;
         if (pthread_create(&e_client_thread, DEFAULT_ATTR, e_client_main, (void*) e_client_args) != SYS_SUC)
         {
-            LANDMARK();
+            LANDMARK()
             pthread_mutex_destroy(&e_client_mutex);
 
             close(connection->socket);
@@ -195,15 +200,15 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
     }
 
     pthread_mutex_lock(&e_client_mutex);
-    LANDMARK();
+    LANDMARK()
 
     if (e_client_cons_len == e_client_cons_cap)
     {
-        LANDMARK();
+        LANDMARK()
         void* new_mem = realloc(&e_client_cons, sizeof(struct e_node) * e_client_cons_cap * 2);
         if (new_mem == NULL)
         {
-            LANDMARK();
+            LANDMARK()
             close(connection->socket);
 
             pthread_mutex_unlock(&e_client_mutex);
@@ -215,7 +220,7 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
         new_mem = realloc(&e_client_pollers, sizeof(struct pollfd) * e_client_cons_cap);
         if (new_mem == NULL)
         {
-            LANDMARK();
+            LANDMARK()
             close(connection->socket);
 
             pthread_mutex_unlock(&e_client_mutex);
@@ -241,11 +246,11 @@ E_RESULT e_connect(const char host[], const char service[], struct e_node* conne
 
 void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, struct e_node* connections, struct pollfd* pollers, int* p_connection_len, int* p_connection_cap)
 {
-    LANDMARK();
+    LANDMARK()
     // Verify new connections are available
     NIF_FLAG (accept_poller->revents, POLLRDNORM)
     {
-        LANDMARK();
+        LANDMARK()
 
         return;
     }
@@ -261,7 +266,7 @@ void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, stru
     // Error Check
     if (connection == SYS_ERR)
     {
-        LANDMARK();
+        LANDMARK()
         switch (errno)
         {
             // Non-recoverable cases; see "accept(2)""
@@ -270,7 +275,7 @@ void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, stru
             case ENOTSOCK: // Not a socket
             case EOPNOTSUPP: // Not a SOCK_STREAM socket
             case EFAULT: // Address not writable
-                LANDMARK();
+                LANDMARK()
                 return;
         }
     }
@@ -279,15 +284,15 @@ void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, stru
     bool bad_mem = false;
     if (connection_len == connection_cap)
     {
-        LANDMARK();
+        LANDMARK()
         void* new_con_mem = realloc(connections, sizeof(struct e_node) * connection_len * 2 + 1);
         if (new_con_mem != NULL) // NULL means mem allocation failed
         {
-            LANDMARK();
+            LANDMARK()
             void* new_pol_mem = realloc(pollers, sizeof(struct pollfd) * connection_len * 2 + 2);
             if (new_pol_mem != NULL)
             {
-                LANDMARK();
+                LANDMARK()
                 connections = (struct e_node*) new_con_mem;
                 pollers = (struct pollfd*) new_pol_mem;
                 *p_connection_cap = connection_cap * 2 + 1;
@@ -303,12 +308,12 @@ void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, stru
     // Verify memory expansion succeeded.
     if (bad_mem)
     {
-        LANDMARK();
+        LANDMARK()
         close(connection);
         return;
     }
 
-    LANDMARK();
+    LANDMARK()
 
     struct e_node* c = &connections[connection_len]; // Get the connection
     memset(c, 0, sizeof(struct e_node));
@@ -334,7 +339,7 @@ void e_handle_accept(struct e_server* server, struct pollfd* accept_poller, stru
 
 void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections, int* connection_len)
 {
-    LANDMARK();
+    LANDMARK()
 
     int old_con_len = *connection_len;
     *connection_len = 0;
@@ -343,12 +348,12 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
     // readded to the list;
     for (int i = 0; i < old_con_len; i++)
     {
-        LANDMARK();
+        LANDMARK()
 
         short e = con_pollers[i].revents;
         if (e == 0) // If no events occurred on this socket, continue
         {
-            LANDMARK();
+            LANDMARK()
             continue;
         }
 
@@ -364,12 +369,12 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
         // list of connections and continue to the next.
         IF_FLAG(e, POLLNVAL)
         {
-            LANDMARK();
+            LANDMARK()
             continue;
         }
         IF_FLAG(e, POLLERR)
         {
-            LANDMARK();
+            LANDMARK()
             // TODO: Figure out if we should close the socket on an err
             // or let the programmer decide that. If the latter, make
             // sure to add it back into the connections array.
@@ -379,20 +384,20 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
 
             if (c->on_error)
             {
-                LANDMARK();
+                LANDMARK()
                 c->on_error(&e_arg);
             }
         }
         IF_FLAG(e, POLLHUP)
         {
-            LANDMARK();
+            LANDMARK()
             // Close connection before e handler is called
             close(c->socket);
             isOpen = false;
 
             if (c->on_close)
             {
-                LANDMARK();
+                LANDMARK()
                 c->on_close(&e_arg);
             }
         }
@@ -400,16 +405,16 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
         // If there isn't an open fd, then read/write won't work.
         if (!isOpen)
         {
-            LANDMARK();
+            LANDMARK()
             continue;
         }
 
         IF_FLAG(e, POLLRDBAND)
         {
-            LANDMARK();
+            LANDMARK()
             if (c->on_oob_read_ready)
             {
-                LANDMARK();
+                LANDMARK()
                 int bytes;
                 ioctl(c->socket, FIONREAD, &bytes);
 
@@ -420,10 +425,10 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
         }
         IF_FLAG(e, POLLRDNORM)
         {
-            LANDMARK();
+            LANDMARK()
             if (c->on_read_ready)
             {
-                LANDMARK();
+                LANDMARK()
                 int bytes;
                 ioctl(c->socket, FIONREAD, &bytes);
 
@@ -434,19 +439,19 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
         }
         IF_FLAG(e, POLLWRBAND)
         {
-            LANDMARK();
+            LANDMARK()
             if (c->on_oob_send_ready)
             {
-                LANDMARK();
+                LANDMARK()
                 c->on_oob_send_ready(&e_arg);
             }
         }
         IF_FLAG(e, POLLWRNORM)
         {
-            LANDMARK();
+            LANDMARK()
             if (c->on_send_ready)
             {
-                LANDMARK();
+                LANDMARK()
                 c->on_send_ready(&e_arg);
             }
         }
@@ -462,7 +467,7 @@ void e_handle_connections(struct pollfd* con_pollers, struct e_node* connections
 
 void* e_server_main(void* v_server)
 {
-    LANDMARK();
+    LANDMARK()
     struct e_server* server = (struct e_server*) v_server;
 
     // Constants
@@ -476,7 +481,7 @@ void* e_server_main(void* v_server)
     struct e_node* connections = calloc(sizeof(struct e_node), connection_cap);
     if (connections == NULL)
     {
-        LANDMARK();
+        LANDMARK()
         close(server->e_listen_fd);
 
         struct e_handler_arg e_arg;
@@ -489,7 +494,7 @@ void* e_server_main(void* v_server)
     struct pollfd* pollers = calloc(sizeof(struct pollfd), connection_cap + 1); // +1 to account for server fd
     if (pollers == NULL)
     {
-        LANDMARK();
+        LANDMARK()
         close(server->e_listen_fd);
 
         free(connections);
@@ -505,12 +510,10 @@ void* e_server_main(void* v_server)
     pollers[0].fd = server->e_listen_fd;
     pollers[0].events = ACCEPT_EVENTS_WORK;
 
-    bool accept_con = true;
-
     // Poll loop
     while (true)
     {
-        LANDMARK();
+        LANDMARK()
         // A timeout is set so that commands can get through the poll on a
         // regular basis.
         int result = poll(pollers, connection_len + 1, TIMEOUT);
@@ -522,10 +525,10 @@ void* e_server_main(void* v_server)
         switch (server->e_command)
         {
             case WORK: // Do nothing
-                LANDMARK();
+                LANDMARK()
                 if (result > 0)
                 {
-                    LANDMARK();
+                    LANDMARK()
                     pollers[LISTEN_POLLER].events = ACCEPT_EVENTS_WORK;
 
                     e_handle_accept(server, pollers, connections, pollers, &connection_len, &connection_cap);
@@ -533,21 +536,21 @@ void* e_server_main(void* v_server)
                 }
                 break;
             case PEND:
-                LANDMARK();
+                LANDMARK()
                 if (result > 0)
                 {
-                    LANDMARK();
+                    LANDMARK()
                     pollers[LISTEN_POLLER].events = ACCEPT_EVENTS_PEND;
 
                     e_handle_connections(pollers + 1, connections, &connection_len);
                 }
             case KILL:
-                LANDMARK();
+                LANDMARK()
                 close(server->e_listen_fd);
 
                 for (int i = 0; i < connection_len; i++)
                 {
-                    LANDMARK();
+                    LANDMARK()
                     close(connections[i].socket);
                 }
 
@@ -561,7 +564,7 @@ void* e_server_main(void* v_server)
 
 void* e_client_main(void* _arg)
 {
-    LANDMARK();
+    LANDMARK()
     void** arg = (void**) _arg;
     struct e_node* e_client_cons = arg[0];
     struct pollfd* e_client_pollers = arg[1];
@@ -570,9 +573,9 @@ void* e_client_main(void* _arg)
 
     while(true)
     {
-        LANDMARK();
+        LANDMARK()
         pthread_mutex_lock(e_client_mutex);
-        LANDMARK();
+        LANDMARK()
 
         int result = poll(e_client_pollers, *e_client_cons_len, TIMEOUT);
 
@@ -580,7 +583,7 @@ void* e_client_main(void* _arg)
 
         if (result > 0)
         {
-            LANDMARK();
+            LANDMARK()
             e_handle_connections(e_client_pollers, e_client_cons, e_client_cons_len);
         }
 
