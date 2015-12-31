@@ -7,13 +7,8 @@ void cov_start();
 void cov_hit(const char str[], int str_len);
 void cov_stop();
 
-#ifdef COVERAGE
 #define MARK(file, line) "\tMark\n\t\tFile: " #file "\n\t\tLine: " #line
 #define LANDMARK()\
-    cov_hit(MARK(__FILE__, __LINE__), sizeof(MARK(__FILE__, __LINE__)))
-#else
-#define MARK(file , line)
-#define LANDMARK()
-#endif
+    cov_hit(MARK(__FILE__, __LINE__), sizeof(MARK(__FILE__, __LINE__)));
 
 #endif // COV_E_SOCKET

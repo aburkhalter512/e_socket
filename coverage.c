@@ -33,7 +33,7 @@ static int cov_counter;
 void cov_filename(const char filename[])
 {
     if (_cov_filename != NULL)
-        free(cov_filename);
+        free(_cov_filename);
 
     _cov_filename = calloc(sizeof(char), len(filename));
     copy(_cov_filename, filename);

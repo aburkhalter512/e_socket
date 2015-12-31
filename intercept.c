@@ -1,5 +1,3 @@
-#ifdef INTERCEPT
-
 #include "intercept_defs.h"
 
 #include <sys/socket.h> // socket, bind, listen, accept
@@ -265,5 +263,3 @@ void* intercept_realloc(void* ptr, size_t size)
             return NULL;
     }
 }
-
-#endif // INTERCEPT

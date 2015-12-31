@@ -1,7 +1,5 @@
-#ifdef INTERCEPT
-
-#ifndef _INTERCEPT
-#define _INTERCEPT
+#ifndef INTERCEPT
+#define INTERCEPT
 
 #include "intercept_defs.h"
 
@@ -27,7 +25,5 @@
     intercept_realloc(ptr, size)
 #define poll(fds, nfds, timeout)\
     intercept_poll(fds, nfds, timeout)
-
-#endif // _INTERCEPT
 
 #endif // INTERCEPT
