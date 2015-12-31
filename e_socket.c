@@ -477,6 +477,11 @@ static void close_server(struct e_server* server, struct e_node* connections, st
 
     free(connections);
     free(pollers);
+
+    struct e_handler_arg e_arg;
+    e_arg.c = NULL;
+    e_arg.arg = server;
+    server->on_close(&e_arg);
 }
 void* e_server_main(void* v_server)
 {
