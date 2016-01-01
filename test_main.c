@@ -83,6 +83,13 @@ TEST_FUNC(bad_server_args)
 
         success = false;
     }
+    else
+    {
+        bad_server.e_command = KILL;
+
+        void* join_val;
+        pthread_join(bad_server.e_thread, &join_val);
+    }
 
 
     if (success)
