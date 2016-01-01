@@ -28,7 +28,7 @@ static int len(const char* str)
 
 static char* _cov_filename;
 static FILE* cov_file;
-static int cov_counter;
+static int* cov_counter;
 
 void cov_filename(const char filename[])
 {
@@ -51,15 +51,15 @@ void cov_start()
     char* start_time = ctime(&cur_time);
 
     fprintf(cov_file, "START: %s", start_time);
-    cov_counter = 0;
+    cov_counter = calloc(1, sizeof(int));
 }
 void cov_hit(const char str[])
 {
     if (!cov_file)
         return;
 
-    fprintf(cov_file, "%d: %s", cov_counter, str);
-    cov_counter++;
+    fprintf(cov_file, "%d: %s", *cov_counter, str);
+    (*cov_counter)++;
 }
 void cov_stop()
 {
@@ -68,4 +68,6 @@ void cov_stop()
 
     fclose(cov_file);
     cov_file = NULL;
+
+    free(cov_counter);
 }
