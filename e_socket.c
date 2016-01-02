@@ -1,5 +1,5 @@
 #ifdef TEST
-#include "intercept_defs.h"
+#include "intercept.h"
 #include "coverage.h"
 #else
 #define LANDMARK(__FILE__, __LINE__)

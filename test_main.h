@@ -53,15 +53,15 @@ const char* E_RESULT_to_str(const E_RESULT result)
 }
 
 #define TEST_FUNC(func_name)\
-    void _func_name(FILE* results_file, const char test_name[]);\
+    void _ ## func_name(FILE* results_file, const char test_name[]);\
     void func_name(FILE* results_file)\
     {\
         cov_filename("cov-" #func_name ".log");\
         cov_start();\
-        _func_name(results_file, #func_name);\
+        _ ## func_name(results_file, #func_name);\
         cov_stop();\
     }\
-    void _func_name(FILE* results_file, const char test_name[])
+    void _ ## func_name(FILE* results_file, const char test_name[])
 
 // Should only be called in a test
 #define TEST_RESULTS(result, msg_format, ...)\
