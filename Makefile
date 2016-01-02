@@ -18,7 +18,10 @@ TEST_EXE=test_main.out
 
 build: $(DEPS) $(OBJS)
 
-buildTest: C_FLAGS += -DTEST
+buildDebug: C_FLAGS += -g
+buildDebug: build
+
+buildTest: C_FLAGS += -DTEST -g
 buildTest: $(TEST_DEPS) $(TEST_OBJS)
 
 linkTest: buildTest
